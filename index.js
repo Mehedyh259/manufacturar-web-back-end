@@ -1,10 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
-const { get } = require('express/lib/response');
+
 
 const port = process.env.PORT || 5000;
 
@@ -17,8 +17,10 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@man
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 
+
+
 // verify function for jwt
-const verifyJWT = (req, res, next) => {
+const verifyToken = (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
@@ -29,7 +31,6 @@ const verifyJWT = (req, res, next) => {
         if (err) {
             return res.status(403).send({ message: 'Access Forbidden' });
         }
-        console.log('decoded', decoded);
         req.decoded = decoded;
         next();
     });
@@ -44,6 +45,21 @@ const run = async () => {
 
         // collections
         const userCollection = client.db('manufacturer-db').collection('users');
+        const productCollection = client.db('manufacturer-db').collection('products');
+        const reviewCollection = client.db('manufacturer-db').collection('reviews');
+        const orderCollection = client.db('manufacturer-db').collection('orders');
+
+        // verify admin from database
+        const verifyAdmin = async (req, res, next) => {
+            const requester = req.decoded.email;
+            const requesterAccount = await userCollection.findOne({ email: requester });
+            const role = requesterAccount.role;
+            if (role === 'admin') {
+                next()
+            } else {
+                res.status(403).send({ message: 'forbidden access' })
+            }
+        }
 
         // login user api to create token and update user database
         app.put('/user/:email', async (req, res) => {
@@ -64,6 +80,60 @@ const run = async () => {
             const result = await userCollection.find().toArray();
             res.send(result);
         });
+        app.get('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const result = await userCollection.findOne({ email: email });
+            res.send(result);
+        });
+
+
+
+        // PRODUCT API
+        app.get('/product', async (req, res) => {
+            const limit = Number(req.query?.limit);
+            if (limit) {
+                const products = await productCollection.find().limit(limit).toArray();
+                res.send(products);
+            } else {
+                const products = await productCollection.find().toArray();
+                res.send(products);
+            }
+        })
+        app.get('/product/:id', verifyToken, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const product = await productCollection.findOne(filter);
+            res.send(product);
+        })
+
+        app.post('/product', verifyToken, verifyAdmin, async (req, res) => {
+            const product = req.body;
+            const result = await productCollection.insertOne(product);
+            res.send(result);
+        });
+
+        app.put('/product/:id', async (req, res) => {
+            const id = req.params.id;
+            const newUpdate = req.body;
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    quantity: newUpdate.quantity
+                }
+            };
+            const result = await productCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
+
+
+
+        // ORDER API
+        app.post('/order', verifyToken, async (req, res) => {
+            const order = req.body;
+            const result = await orderCollection.insertOne(order);
+            res.send(result);
+        })
 
     } finally {
 
