@@ -45,16 +45,21 @@ const run = async () => {
         // collections
         const userCollection = client.db('manufacturer-db').collection('users');
 
-        // login api to create token
-        app.post('/login', (req, res) => {
-            const user = req.body;
-            const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-                expiresIn: '1d'
-            });
-            res.send({ accessToken });
+        // login user api to create token and update user database
+        app.put('/user/:email', async (req, res) => {
+            const user = req.body
+            const email = req.params.email;
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: user
+            }
+            const result = await userCollection.updateOne(filter, updatedDoc, options);
+            const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' })
+            res.send({ token });
         })
 
-        // user api
+        // USERS API 
         app.get('/user', async (req, res) => {
             const result = await userCollection.find().toArray();
             res.send(result);
