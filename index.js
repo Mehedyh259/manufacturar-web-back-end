@@ -4,6 +4,7 @@ const app = express();
 const { MongoClient, ServerApiVersion } = require('mongodb');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
+const { get } = require('express/lib/response');
 
 const port = process.env.PORT || 5000;
 
@@ -19,8 +20,23 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 
 const run = async () => {
-    await client.connect();
-    console.log('database connected');
+    try {
+        await client.connect();
+        console.log('database connected');
+
+        const userCollection = client.db('manufacturer-db').collection('users');
+
+
+        // user api
+        app.get('/user', async (req, res) => {
+            const result = await userCollection.find().toArray();
+            res.send(result);
+        })
+
+    } finally {
+
+    }
+
 
 
 }
