@@ -153,6 +153,13 @@ const run = async () => {
             res.send(result);
         })
 
+        app.delete('/product/:id', verifyToken, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            filter = { _id: ObjectId(id) };
+            const result = await productCollection.deleteOne(filter);
+            res.send(result)
+        })
+
 
         // REVIEW API 
         app.get('/review', async (req, res) => {
