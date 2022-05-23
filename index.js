@@ -61,6 +61,7 @@ const run = async () => {
             }
         }
 
+        // USERS API 
         // login user api to create token and update user database
         app.put('/user/:email', async (req, res) => {
             const user = req.body
@@ -75,7 +76,18 @@ const run = async () => {
             res.send({ token });
         })
 
-        // USERS API 
+        app.put('/user/update/:email', async (req, res) => {
+            const profile = req.body
+            const email = req.params.email;
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: profile
+            }
+            const result = await userCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
+
         app.get('/user', async (req, res) => {
             const result = await userCollection.find().toArray();
             res.send(result);
@@ -127,6 +139,16 @@ const run = async () => {
         })
 
 
+        // REVIEW API 
+        app.get('/review', async (req, res) => {
+            const reviews = (await reviewCollection.find().toArray()).reverse();
+            res.send(reviews);
+        })
+        app.post('/review', verifyToken, async (req, res) => {
+            const review = req.body;
+            const result = await reviewCollection.insertOne(review);
+            res.send(result);
+        });
 
         // ORDER API
         app.post('/order', verifyToken, async (req, res) => {
