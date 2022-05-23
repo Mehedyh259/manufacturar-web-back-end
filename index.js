@@ -174,12 +174,24 @@ const run = async () => {
 
         // ORDER API
 
-        app.get('/order/:email', verifyToken, async (req, res) => {
-            const email = req.params.email;
-            const filter = { email: email }
-            const orders = (await orderCollection.find(filter).toArray()).reverse();
-            res.send(orders);
+
+        app.get('/order', verifyToken, async (req, res) => {
+            const email = req.query?.email;
+            if (email) {
+                const filter = { email: email }
+                const orders = (await orderCollection.find(filter).toArray()).reverse();
+                res.send(orders);
+            } else {
+                const orders = (await orderCollection.find().toArray()).reverse();
+                res.send(orders);
+            }
         })
+        app.get('/order/:id', verifyToken, async (req, res) => {
+            const id = req.params.id;
+            const order = await orderCollection.findOne({ _id: ObjectId(id) });
+            res.send(order);
+        })
+
 
         app.post('/order', verifyToken, async (req, res) => {
             const order = req.body;
