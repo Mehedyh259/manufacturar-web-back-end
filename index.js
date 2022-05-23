@@ -49,6 +49,7 @@ const run = async () => {
         const productCollection = client.db('manufacturer-db').collection('products');
         const reviewCollection = client.db('manufacturer-db').collection('reviews');
         const orderCollection = client.db('manufacturer-db').collection('orders');
+        const paymentCollection = client.db('manufacturer-db').collection('payments');
 
         // verify admin from database
         const verifyAdmin = async (req, res, next) => {
@@ -205,6 +206,34 @@ const run = async () => {
             const id = req.params.id;
             const order = await orderCollection.findOne({ _id: ObjectId(id) });
             res.send(order);
+        })
+
+        app.put('/order/:id', verifyToken, async (req, res) => {
+            const id = req.params.id;
+            const payment = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    status: 'pending',
+                    transactionId: payment.transactionId
+                }
+            }
+            const result = await paymentCollection.insertOne(payment)
+            const updateOrder = await orderCollection.updateOne(filter, updatedDoc);
+            res.send(updatedDoc);
+        })
+
+        app.put('/order/accept/:id', verifyToken, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const data = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    status: data.status
+                }
+            }
+            const result = await orderCollection.updateOne(filter, updatedDoc);
+            res.send(result)
         })
 
 
