@@ -87,6 +87,16 @@ const run = async () => {
             const result = await userCollection.updateOne(filter, updatedDoc, options);
             res.send(result);
         })
+        app.put('/user/admin/:email', verifyToken, verifyAdmin, async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+            const updatedDoc = {
+                $set: { role: 'admin' }
+            }
+            const result = await userCollection.updateOne(filter, updatedDoc);
+            res.send({ result });
+
+        })
 
         app.get('/user', async (req, res) => {
             const result = await userCollection.find().toArray();
@@ -95,6 +105,11 @@ const run = async () => {
         app.get('/user/:email', async (req, res) => {
             const email = req.params.email;
             const result = await userCollection.findOne({ email: email });
+            res.send(result);
+        });
+        app.delete('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const result = await userCollection.deleteOne({ email: email });
             res.send(result);
         });
 
@@ -151,9 +166,24 @@ const run = async () => {
         });
 
         // ORDER API
+
+        app.get('/order/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email }
+            const orders = (await orderCollection.find(filter).toArray()).reverse();
+            res.send(orders);
+        })
+
         app.post('/order', verifyToken, async (req, res) => {
             const order = req.body;
             const result = await orderCollection.insertOne(order);
+            res.send(result);
+        })
+
+        app.delete('/order/:id', verifyToken, async (req, res) => {
+            const id = req.params.id;
+            filter = { _id: ObjectId(id) };
+            const result = await orderCollection.deleteOne(filter);
             res.send(result);
         })
 
