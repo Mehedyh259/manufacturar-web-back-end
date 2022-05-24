@@ -135,10 +135,10 @@ const run = async () => {
         app.get('/product', async (req, res) => {
             const limit = Number(req.query?.limit);
             if (limit) {
-                const products = await productCollection.find().limit(limit).toArray();
+                const products = ((await productCollection.find().toArray()).reverse()).slice(0, limit);
                 res.send(products);
             } else {
-                const products = await productCollection.find().toArray();
+                const products = (await productCollection.find().toArray()).reverse();
                 res.send(products);
             }
         })
