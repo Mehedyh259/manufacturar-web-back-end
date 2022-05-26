@@ -23,7 +23,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 // verify function for jwt
 const verifyToken = (req, res, next) => {
     const authHeader = req.headers.authorization;
-
+    console.log(authHeader);
     if (!authHeader) {
         return res.status(401).send({ message: 'Unauthorized access' });
     }
@@ -105,9 +105,10 @@ const run = async () => {
         })
         app.put('/user/admin/:email', verifyToken, verifyAdmin, async (req, res) => {
             const email = req.params.email;
+            const update = req.body;
             const filter = { email: email };
             const updatedDoc = {
-                $set: { role: 'admin' }
+                $set: update
             }
             const result = await userCollection.updateOne(filter, updatedDoc);
             res.send({ result });
