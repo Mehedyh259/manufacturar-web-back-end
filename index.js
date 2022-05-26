@@ -92,7 +92,7 @@ const run = async () => {
             res.send({ token });
         })
 
-        app.put('/user/update/:email', async (req, res) => {
+        app.put('/user/update/:email', verifyToken, async (req, res) => {
             const profile = req.body
             const email = req.params.email;
             const filter = { email: email };
@@ -114,16 +114,16 @@ const run = async () => {
 
         })
 
-        app.get('/user', async (req, res) => {
+        app.get('/user', verifyToken, verifyAdmin, async (req, res) => {
             const result = await userCollection.find().toArray();
             res.send(result);
         });
-        app.get('/user/:email', async (req, res) => {
+        app.get('/user/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
             const result = await userCollection.findOne({ email: email });
             res.send(result);
         });
-        app.delete('/user/:email', async (req, res) => {
+        app.delete('/user/:email', verifyToken, verifyAdmin, async (req, res) => {
             const email = req.params.email;
             const result = await userCollection.deleteOne({ email: email });
             res.send(result);
